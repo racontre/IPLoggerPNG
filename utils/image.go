@@ -3,14 +3,12 @@ package utils
 import (
 	"image"
 	"image/color"
-	
-	//"image/png"
-	//"os"
-  
+	"strconv"
+
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/basicfont"
 	"golang.org/x/image/math/fixed"
-  )
+)
 
   func addLabel(img *image.RGBA, x, y int, label string) {
 	col := color.RGBA{200, 100, 0, 255}
@@ -25,25 +23,13 @@ import (
 	d.DrawString(label)
   }
   
-  func GenerateImage(data [10]string) *image.RGBA {
+  func GenerateImage(data []string) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, 400, 100))
 
 	for index, ip := range data{
-        addLabel(img, 10 + 150 * (index / 5), 15 + (index % 5) * 15, ip) //надо оборачивать в скобки / и % операции а то выйдет отстой
+		//rows := len(data) / 2
+        addLabel(img, 10 + 150 * (index / 5), 15 + (index % 5) * 15, strconv.Itoa(index + 1) + ") " + ip) //надо оборачивать в скобки / и % операции иначе то выйдет float
     }
   
 	return img
-	
-	/*f, err := os.Create("data.png")
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-	if err := png.Encode(f, img); err != nil {
-		panic(err)
-	}*/
   }
-/*
-  func main() {
-	GenerateImage()
-  }*/

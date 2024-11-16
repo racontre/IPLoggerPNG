@@ -1,4 +1,4 @@
-package utils
+package iplogger
 
 import (
 	"database/sql"
@@ -9,6 +9,10 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 )
+
+type SqliteLoggerSerivce struct {
+	Db *sql.DB
+}
 
 func InitializeDB() (*sql.DB, error) {
 	const file string = "visits.db"
@@ -30,48 +34,45 @@ func InitializeDB() (*sql.DB, error) {
 	return db, nil
 }
 
-// selecting 10 latest ips
-func GetIP(db *sql.DB) [10]string {
-	row, err := db.Query("SELECT * FROM IP ORDER BY id DESC LIMIT 10")
-	if err != nil {
-		log.Fatal("Error during query: ", err)
-	}
-	defer row.Close()
-
-	var data [10]string
-	index := 0
-	for row.Next() { // Iterate and fetch the records from result cursor
-		var id int
-		var IPAddress uint32
-		row.Scan(&id, &IPAddress)
-		address := Long2ip(IPAddress)
-		data[index] = address
-		index++
-	}
-	return data
-}
-
-func InsertIP(db *sql.DB, address string) {
+func (s SqliteLoggerSerivce) InsertIP(ip string) error {
 	log.Println("Inserting IP record ...")
 	insertIPSQL := `INSERT INTO IP(IPAddress) VALUES (?)`
-	statement, err := db.Prepare(insertIPSQL) // Prepare statement. 
+	statement, err := s.Db.Prepare(insertIPSQL) // Prepare statement. 
                                                    // This is good to avoid SQL injections
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
 
-	addressLong, err := Ip2long(address)
+	addressLong, err := Ip2long(ip)
 	if err != nil {
-		log.Println("Failed to convert ", address, " to longint: ", err)
+		return err
 	}
 
 	_, err = statement.Exec(addressLong)
 	if err != nil {
-		log.Fatalln(err.Error())
+		return err
 	}
+	return nil
 }
 
-// the IP is stored as a long int
+func (s SqliteLoggerSerivce) GetIPList(num int) ([]string, error) {
+	row, err := s.Db.Query("SELECT * FROM IP ORDER BY id DESC LIMIT 10")
+	if err != nil {
+		return nil, err
+	}
+	defer row.Close()
+
+	var data []string
+	for row.Next() { // Iterate and fetch the records from result cursor
+		var id int
+		var IPAddress uint32
+		row.Scan(&id, &IPAddress)
+		address := Long2ip(IPAddress)
+		data = append(data, address)
+	}
+	return data, nil
+}
+
 func Long2ip(ipLong uint32) string {
 	ipByte := make([]byte, 4)
 	binary.BigEndian.PutUint32(ipByte, ipLong)
