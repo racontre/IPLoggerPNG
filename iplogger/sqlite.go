@@ -14,44 +14,39 @@ type SqliteLoggerSerivce struct {
 	Db *sql.DB
 }
 
+// Creates necessary tables if they don't exist (maybe force create visits.db if it doesn't exist)
 func InitializeDB() (*sql.DB, error) {
 	const file string = "visits.db"
 	db, err := sql.Open("sqlite3", file)
-	if err != nil {
-		return nil, err
-	}
+	if err != nil { return nil, err }
 
+	// Perhaps add a datetime field eventually?
 	const create string = `
 		CREATE TABLE IF NOT EXISTS IP (
 		id INTEGER NOT NULL PRIMARY KEY,	
 		IPAddress INTEGER
 		);`
 	
-	if _, err := db.Exec(create); err != nil {
-		return nil, err
-	}
+	if _, err := db.Exec(create); err != nil { return nil, err }
 
 	return db, nil
 }
 
 func (s SqliteLoggerSerivce) InsertIP(ip string) error {
+	if ip == "127.0.0.1" {return nil}
+
 	log.Println("Inserting IP record ...")
 	insertIPSQL := `INSERT INTO IP(IPAddress) VALUES (?)`
-	statement, err := s.Db.Prepare(insertIPSQL) // Prepare statement. 
-                                                   // This is good to avoid SQL injections
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
+	statement, err := s.Db.Prepare(insertIPSQL)
+                                                
+	if err != nil { return err }
 
 	addressLong, err := Ip2long(ip)
-	if err != nil {
-		return err
-	}
+	if err != nil {	return err }
 
 	_, err = statement.Exec(addressLong)
-	if err != nil {
-		return err
-	}
+	if err != nil {	return err }
+
 	return nil
 }
 
@@ -63,7 +58,7 @@ func (s SqliteLoggerSerivce) GetIPList(num int) ([]string, error) {
 	defer row.Close()
 
 	var data []string
-	for row.Next() { // Iterate and fetch the records from result cursor
+	for row.Next() {
 		var id int
 		var IPAddress uint32
 		row.Scan(&id, &IPAddress)

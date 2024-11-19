@@ -1,8 +1,14 @@
 package utils
 
 import (
+	"errors"
+	"fmt"
 	"image"
 	"image/color"
+	"image/draw"
+	_ "image/gif"
+	"log"
+	"net/http"
 	"strconv"
 
 	"golang.org/x/image/font"
@@ -23,13 +29,48 @@ import (
 	d.DrawString(label)
   }
   
-  func GenerateImage(data []string) *image.RGBA {
+  // this image is returned on /{page}.png route
+  func GenerateImage(data []string, parser *GeoIPParser) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, 400, 100))
 
 	for index, ip := range data{
-		//rows := len(data) / 2
-        addLabel(img, 10 + 150 * (index / 5), 15 + (index % 5) * 15, strconv.Itoa(index + 1) + ") " + ip) //надо оборачивать в скобки / и % операции иначе то выйдет float
-    }
-  
+		x_margin := 10;
+		y_margin := 5;
+		x := 160 * (index / 5)	 + x_margin
+		y := (index % 5) * 15	 + y_margin
+		txt_x_offset := 25	// offseting to the right of the flag
+		txt_y_offset := 10
+		
+        addLabel(img, x + txt_x_offset, y + txt_y_offset, strconv.Itoa(index + 1) + ") " + ip)
+		countryCode, err := parser.GetCountry_DB(ip)
+		if err != nil {log.Println("failed to draw flag: ", ip, countryCode, err)}
+
+		if countryCode != "Unknown" {DrawFlag(img, -x, -y, countryCode)}
+	}
 	return img
   }
+
+  // shouldn't draw anything if there's no appropriate isocode
+  func DrawFlag(img *image.RGBA, x, y int, flagCode string) error {
+	flag, err := loadImageFromURL(fmt.Sprintf("https://www.translatorscafe.com/cafe/images/flags/%s.gif", flagCode))
+	if err != nil {return err}
+
+	draw.Draw(img, img.Bounds(), flag, image.Point{x, y}, draw.Src)
+
+	return nil
+  }
+
+  func loadImageFromURL(URL string) (image.Image, error) {
+    response, err := http.Get(URL)
+    if err != nil { return nil, err }
+    defer response.Body.Close()
+
+    if response.StatusCode != 200 {
+        return nil, errors.New("received non-200 response code")
+    }
+
+    img, _, err := image.Decode(response.Body)
+    if err != nil { return nil, err }
+
+    return img, nil
+}
