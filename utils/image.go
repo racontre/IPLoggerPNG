@@ -42,10 +42,12 @@ import (
 		txt_y_offset := 10
 		
         addLabel(img, x + txt_x_offset, y + txt_y_offset, strconv.Itoa(index + 1) + ") " + ip)
-		countryCode, err := parser.GetCountry_DB(ip)
-		if err != nil {log.Println("failed to draw flag: ", ip, countryCode, err)}
+		if parser != nil { 
+			countryCode, err := parser.GetCountry_DB(ip)
+			if err != nil {log.Println("failed to draw flag: ", ip, countryCode, err)}
 
-		if countryCode != "Unknown" {DrawFlag(img, -x, -y, countryCode)}
+			if countryCode != "Unknown" {DrawFlag(img, -x, -y, countryCode)}
+		}
 	}
 	return img
   }
@@ -73,4 +75,8 @@ import (
     if err != nil { return nil, err }
 
     return img, nil
+}
+
+func loadImageLocal(path string) (image.Image, error){
+	return nil, nil
 }

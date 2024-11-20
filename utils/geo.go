@@ -34,7 +34,6 @@ func (parser *GeoIPParser) GetCountry_DB(ip string) (string, error) {
 	ipNet := net.ParseIP(ip)
 	record, err := parser.db.City(ipNet)
 	if err != nil {return "Unknown", err}
-	log.Println(record.Country.IsoCode)
 	return record.Country.IsoCode, nil
 }
 

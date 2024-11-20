@@ -33,7 +33,10 @@ func InitializeDB() (*sql.DB, error) {
 }
 
 func (s SqliteLoggerSerivce) InsertIP(ip string) error {
-	if ip == "127.0.0.1" {return nil}
+	if ip == "127.0.0.1" {
+		log.Println("Did not add 127.0.0.1 to IP list")
+		return nil
+	}
 
 	log.Println("Inserting IP record ...")
 	insertIPSQL := `INSERT INTO IP(IPAddress) VALUES (?)`
