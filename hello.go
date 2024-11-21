@@ -36,7 +36,7 @@ func main() {
 
 func RegisterIPLoggerHandlers (router *mux.Router, service iplogger.IPLoggerService, geoip *utils.GeoIPParser) {
 	router.HandleFunc("/{page}.png", func(w http.ResponseWriter, r *http.Request) {
-		log.Println(r.Header)
+		log.Println(r.Header.Get("X-Real-IP"))
 		host, _, _ := net.SplitHostPort(r.Header.Get("X-Real-IP"))
 		err := service.InsertIP(host)
 		if err != nil { log.Println("Error while inserting new IP: ", err) }
