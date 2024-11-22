@@ -4,7 +4,6 @@ import (
 	"image/png"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/gorilla/mux"
 
@@ -37,10 +36,9 @@ func main() {
 func RegisterIPLoggerHandlers (router *mux.Router, service iplogger.IPLoggerService, geoip *utils.GeoIPParser) {
 	router.HandleFunc("/{page}.png", func(w http.ResponseWriter, r *http.Request) {
 		log.Println(r.Header)
-		log.Println(r.Header.Get("X-Real-Ip"))
-		realip := strings.Fields(r.Header.Get("X-Real-Ip"))[1]
-		//host, _, _ := net.SplitHostPort(r.Header.Get("X-Real-Ip"))
-		err := service.InsertIP(realip)
+		log.Println("IP: ", r.Header.Get("X-Real-Ip"))
+		host := r.Header.Get("X-Real-Ip")
+		err := service.InsertIP(host)
 		if err != nil { log.Println("Error while inserting new IP: ", err) }
 		w.Header().Set("Content-Type", "image/png")
 		
